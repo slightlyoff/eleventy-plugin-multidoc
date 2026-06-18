@@ -1,0 +1,30 @@
+{
+  "name": "eleventy-plugin-multidoc",
+  "version": "0.1.0",
+  "description": "An 11ty plugin for generating multiple output files from a single source document.",
+  "main": "index.js",
+  "module": "index.js",
+  "scripts": {},
+  "keywords": [
+    "eleventy",
+    "eleventy-plugin"
+  ],
+  "author": {
+    "name": "Alex Russell",
+    "email": "slightlyoff@gmail.com",
+    "url": "https://infrequently.org"
+  },
+  "11ty": {
+    "compatibility": ">=3.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eleventy-plugin-multidoc.git"
+  },
+  "type": "module",
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "tinyglobby": "^0.2.17"
+  }
+}
