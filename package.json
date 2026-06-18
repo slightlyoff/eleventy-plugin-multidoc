@@ -1,6 +1,6 @@
 {
   "name": "@slightlyoff/eleventy-plugin-multidoc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An 11ty plugin for generating multiple output files from a single source document.",
   "main": "index.js",
   "module": "index.js",
