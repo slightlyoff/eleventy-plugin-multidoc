@@ -24,7 +24,7 @@ export default async function(config) {
 ```
 
 This allows you to write Markdown files whose name end in `.multidoc.md` that
-are split by the string `---+++---`; e.g. if we had a file located at
+are split by the string `<!-- --- -->`; e.g. if we had a file located at
 `./yoursite/postname.multidoc.md`, and it contains:
 
 ```md
@@ -37,12 +37,12 @@ are split by the string `---+++---`; e.g. if we had a file located at
 
 This chunk will land in: `<output-dir>/postname/1/index.html`
 
----+++---
+<!-- --- -->
 # A Second Chunk
 
 Output to: `<output-dir>/postname/2/index.html`
 
----+++---
+<!-- --- -->
 ---
 title: "You can set 11ty through frontmatter sections"
 subtitle: "These are also available as page data for processing"
@@ -111,7 +111,7 @@ filename: "preamble-1"
 rights of all members of the human family is the foundation of freedom, justice
 and peace in the world,
 
----+++---
+<!-- --- -->
 
 > Whereas disregard and contempt for human rights have resulted in barbarous
 > acts which have outraged the conscience of mankind, and the advent of a world
@@ -119,7 +119,7 @@ and peace in the world,
 > from fear and want has been proclaimed as the highest aspiration of the
 > common people,
 
----+++---
+<!-- --- -->
 ---
 filename: "postname/preamble-3.html"
 # If a filename ends in `.html` that is used verbatim.
@@ -151,47 +151,19 @@ boundaries. A classic example of this are comments that might span multiple
 separated chunks, e.g. if you're using nunjucks inside your markdown templates.
 
 Here's an example that strips Nunjucks comments before each file is chunked and
-transformed:
+transformed using the provided function for stripping comments:
 
 ```js
 // Your project's .eleventy.js
-import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
-
-//
-// Remove Nunjucks comments before doing any splitting; 
-// prevents errors with comments that might otherwise span 
-// pages or include the page separator string.
-//
-const njkCommentStart = "{#";
-const njkCommentEnd = "#}";
-let njkCommentStrip = (str="") => {
-  if(
-    (str.length < njkCommentStart.length) ||
-    (!str.includes(njkCommentStart)) ||
-    (!str.includes(njkCommentEnd))
-  ) {
-    return str;
-  }
-  let ret = "";
-  let idx = 0;
-  let openedAt = str.indexOf(njkCommentStart, idx);
-  while(openedAt >= 0) {
-    ret += str.substring(idx, openedAt);
-    idx = str.indexOf(njkCommentEnd, 
-                      idx + njkCommentStart.length) + njkCommentEnd.length;
-    openedAt = str.indexOf(njkCommentStart, idx);
-  }
-  ret += str.substring(idx);
-  return ret;
-};
+import { multiDocPlugin, commentRemover } from 
+    "@slightlyoff/eleventy-plugin-multidoc";
 
 export default async function(config) {
   // ...
 
   await config.addPlugin(multiDocPlugin, {
     pattern: "**/*.slides.md",
-    separator: "<!-- --- -->",
-    filePreProcess: njkCommentStrip,
+    filePreProcess: commentRemover(),
   });
 
   // ...
