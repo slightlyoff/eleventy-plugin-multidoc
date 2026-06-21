@@ -11,44 +11,80 @@ function escapeRegex(str) {
 function identity(i) { return i; }
 
 /**
+ * Strip multi-line comments from a string, defaults to removing 
+ * Nunjucks-style comments
+ * @param {string} str - Full content
+ * @param {string} [start="{#"] - Comment start, defaults to "{#"
+ * @param {string} [end="#}"] - Comment end, defaults to "#}"
+ * @returns {string}
+ */
+export function stripComments(str="", start="{#", end="#}") {
+  // Slow, but easier than debugging a regex
+  if(
+    (str.length < start.length) ||
+    (!str.includes(start)) || (!str.includes(end))) {
+    return str;
+  }
+  // Don't use a builder arr + join; modern engines 
+  // use ropes internally and that'll be faster.
+  let ret = "";
+  let idx = 0;
+  let openedAt = str.indexOf(start, idx);
+  while(openedAt >= 0) {
+    // Snip from the end of the previous comment to start of the next one
+    ret += str.substring(idx, openedAt);
+    // Search from comment start for next comment end and bump index pointer to
+    // that character
+    idx = str.indexOf(end, (idx + start.length)) + end.length;
+    // Find the next start
+    openedAt = str.indexOf(start, idx);
+  }
+  ret += str.substring(idx);
+  return ret;
+}
+
+/**
+ * Generate a function to strip multi-line comments from a string. Defaults to
+ * removing Nunjucks-style comments
+ * @param {string} [start="{#"] - Comment start, defaults to "{#"
+ * @param {string} [end="#}"] - Comment end, defaults to "#}"
+ * @returns {Function} - A function to be passed to multiDocPlugin's 
+ *                       filePreProcess argument.
+ */
+export function commentRemover(start="{#", end="#}") {
+  return function(str) { return stripComments(str, start, end); }
+}
+
+/**
  * Split a raw multi-doc file into segments.
  * @param {string} rawContent - Full file content including first front matter.
- * @param {string|RegExp} separator - Delimiter between segments.
+ * @param {string|RegExp} separator - Delimiter between segments, defaults to `<!-- --- -->`
  * @returns {Array<{data: object, content: string}>}
  */
-function splitMultiDoc(rawContent, separator = "---", preProcess=identity) {
+function splitMultiDoc(rawContent, 
+                       separator = "<!-- --- -->", 
+                       preProcess=identity) {
   let normalized = preProcess(rawContent.replace(/\r\n/g, "\n"));
-
-  // Parse the first front matter block (standard gray-matter behavior)
-  let firstParse = matter(normalized);
-  let firstData = firstParse.data;
-  let body = firstParse.content;
 
   // Build pattern from separator
   let splitPattern = separator instanceof RegExp ? separator
                       : new RegExp(`^\\s*${escapeRegex(separator)}\\s*$`, "m");
 
   // Split content body
-  let chunks = body.split(splitPattern);
+  let chunks = rawContent.split(splitPattern);
 
-  let segments = [{
-    data: firstData,
-    content: chunks[0]
-  }];
+  let segments = [];
+  chunks.forEach((chunk, i) => {
+    chunk = chunk.trim();
+    if(!chunk) { return; } // skip empty chunks 
 
-  for (let i = 1; i < chunks.length; i++) {
-    let chunk = chunks[i].trim();
-    if(!chunk) { continue; } // skip empty chunks 
-
-    // Subsequent chunks: check for their own front matter
-    if(chunk.startsWith("---\n")) {
-      let parsed = matter(chunk);
-      segments.push({ data: parsed.data, content: parsed.content.trim() });
-    } else {
-      segments.push({ data: {}, content: chunk });
-    }
-  }
-
+    matter.clearCache(); // *sigh*
+    let parsed = matter(chunk);
+    segments.push({ 
+      data: parsed.data, 
+      content: parsed.content.trim()
+    });
+  });
   return segments;
 }
 
@@ -56,26 +92,32 @@ function splitMultiDoc(rawContent, separator = "---", preProcess=identity) {
  * multiDocPlugin options
  * @typedef {Object} MultiDocOptions
  * @property {string} [pattern="**\/*.multidoc.md"]- Glob pattern for matching files
- * @property {string} [separator="---"] - Frontmatter separator
+ * @property {string} [separator="<!-- --- -->"] - Document separator
  * @property {boolean} [navigation=true] - Should "prev" and "next" links be auto-generated?
  * @property {Function} [filePreProcess] - Function called to pre-process the text of the whole multi-section file
- * @property {Function} [chunkPreProcess] - Called per split chunk
+ * @property {boolean} [flatten=false] - Should all chunks be output to the same folder?
+ * @property {Function} [chunkPreProcess] - Called per split chunk; return value of this function is used instead.
  */
-
-// let oldConfig = null;
 
 /**
  * Eleventy plugin: Multi-Doc
  * @param {Object} eleventyConfig- The Eleventy configuration object
  * @param {MultiDocOptions} [options] - File pattern, frontmatter separator, and link options
  */
-export default function multiDocPlugin(eleventyConfig, options={}) {
+export default function() {
+  return _mdp.call(this, ...arguments);
+}
+
+export let multiDocPlugin = _mdp;
+
+function _mdp(eleventyConfig, options={}) {
   let {
     pattern = "**/*.multidoc.md",
-    separator = "---",
+    separator = "<!-- --- -->",
     navigation = true,
     filePreProcess = identity,
     chunkPreProcess = identity,
+    flatten = false,
   } = options;
 
   // Watch source file changes; triggers config reset, and plugin re-executes
@@ -89,51 +131,64 @@ export default function multiDocPlugin(eleventyConfig, options={}) {
   // Find and process all matching files
   let files = globSync(pattern, { cwd: inputDir });
 
-  for (let filePath of files) {
+  files.forEach((filePath) => {
     let absolutePath = path.join(inputDir, filePath);
     let rawContent = fs.readFileSync(absolutePath, "utf-8");
     let processed = filePreProcess(rawContent);
     let segments = splitMultiDoc(processed, separator, chunkPreProcess);
 
-    if (!segments.length) { continue; }
+    if (!segments.length) { return; }
 
-    // Base stem: "talks/my-talk.slides.md" to "outdir/my-talk/[1...N]/index.html"
+    // Base stem: 
+    //  "talks/my-talk.slides.md" to "outdir/my-talk/[1...N]/index.html"
+
     // TODO: make extension configurable
     let baseStem = filePath.replace(/\.\w+\.md$/, "");
 
+    // TODO: allow zero-indexed for nerds?
+    let getPathFor = function(segment, idx=0) {
+      let path = segment?.data?.permalink || 
+                 segment?.data?.filename ||
+                `${baseStem}/${ idx + 1 }${ flatten ? "" : "/index" }`;
+      return path;
+    }
+
     // Create a virtual template per segment
-    segments.forEach((segment, index) => {
-      // TODO: really hate this as an output structure
-      let virtualPath = `${baseStem}/${index + 1}.md`;
-      let segmentData = { ...segment.data };
-      let prev = segmentData.prev || (
-        index > 0 ? `/${baseStem}/${index}/` : null
-      );
-      let next = segmentData.next || (
-        index < segments.length - 1 ? `/${baseStem}/${index + 2}/` : null
-      );
+    segments.forEach((segment, idx=0) => {
+      let virtualBasePath = getPathFor(segment, idx);
+      let virtualPath = `${virtualBasePath}.md`; 
 
-      if (navigation) {
-        segmentData.multiDoc = {
-          index,
-          total: segments.length,
-          sourceFile: filePath,
-          // TODO: make "prev" and "next" configurable via frontmatter
-          prev: index > 0 ? `/${baseStem}/${index}/` : null,
-          next: index < segments.length - 1 ? `/${baseStem}/${index + 2}/` : null,
-        };
-        segmentData.prev = segmentData.prev || segmentData.multiDoc.prev;
-        segmentData.next = segmentData.next || segmentData.multiDoc.next;
+      segment.data.multiDoc = {
+        idx,
+        virtualPath,
+        total: segments.length,
+        sourceFile: filePath,
+      };
+
+      if(!segment.data.permalink) {
+        segment.data.permalink = `/${virtualBasePath}.html`;
       }
-
-      if (!segmentData.permalink) {
-        segmentData.permalink = `/${baseStem}/${index + 1}/`;
-      }
-
-      eleventyConfig.addTemplate(virtualPath, segment.content, segmentData);
     });
-  }
-}
 
-// module.exports = multiDocPlugin;
-// module.exports.splitMultiDoc = splitMultiDoc;
+    // Fixup prev/next links, then add template to build
+    segments.forEach((segment, idx) => {
+      // Prev
+      if(navigation) {
+        if(idx > 0) { 
+          let prev = segments[idx - 1];
+          segment.data.multiDoc.prev = segment.data.prev = prev.data.permalink;
+        }
+        // Next
+        if(idx < segments.length - 1) {
+          let next = segments[idx + 1];
+          segment.data.multiDoc.next = segment.data.next = next.data.permalink;
+        }
+      }
+
+      // Add
+      eleventyConfig.addTemplate(segment.data?.multiDoc?.virtualPath,
+                                 segment.content,
+                                 segment.data);
+    });
+  });
+}
