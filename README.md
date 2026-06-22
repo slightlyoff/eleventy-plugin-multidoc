@@ -17,15 +17,18 @@ your 11ty entrypoint file):
 ```js
 // NOTE: only tested in modern ESM-based projects
 import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
+
 export default async function(config) {
+
   await config.addPlugin(multiDocPlugin);
   // ...
+
 }
 ```
 
 This allows you to write Markdown files whose name end in `.multidoc.md` that
 are split by the string `<!-- --- -->`; e.g. if we had a file located at
-`./yoursite/postname.multidoc.md`, and it contains:
+`./yoursite/postname.multidoc.md` containing:
 
 ```md
 # The First Chunk
@@ -51,6 +54,27 @@ subtitle: "These are also available as page data for processing"
 # A Third Chunk
 
 Output to: `<output-dir>/postname/3/index.html`
+```
+
+[11ty font matter](https://www.11ty.dev/docs/data-frontmatter/) is supported,
+and templating languages can be mixed with markdown per usual (see below). Each
+entry also has default `next` and `prev` URLs generated in each 11ty entry's
+`.data` entry in order to make traversing sets of generated documents easier.
+If those are provided manually (e.g., via front matter), they will not be
+overridden. To disable, pass `false` for the `navigation` option:
+
+```js
+// ...
+import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
+
+export default async function(config) {
+
+  await config.addPlugin(multiDocPlugin, {
+    navigation: false,
+  });
+  
+  // ...
+}
 ```
 
 ## Controlling Output File Structure
