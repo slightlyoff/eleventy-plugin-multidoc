@@ -200,7 +200,7 @@ export default async function(config) {
 }
 ```
 
-[Pandoc,](https://pandoc.org/MANUAL.html#structuring-the-slide-show) uses any Markdown horizontal rule as a document delimiter, which can be re-created using a regular expression:
+[Pandoc,](https://pandoc.org/MANUAL.html#structuring-the-slide-show) e.g., uses any Markdown horizontal rule as a document delimiter, which can be re-created using a regular expression:
 
 ```js
 // .eleventy.js
@@ -216,3 +216,5 @@ export default async function(config) {
   // ...
 }
 ```
+
+When passing a custom separator regular expression, be sure to set the multiline flag (`/m`) and explicitly match line start and line end to avoid incorrectly matching within content.
