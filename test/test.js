@@ -11,8 +11,8 @@ let basicConfig = {
 
 test("Basic splitting", async (t) => {
   let mdDir = "test/stubs/markdown";
-	let elev = new Eleventy(mdDir, "_site", basicConfig);
-	let results = await elev.toJSON();
+  let elev = new Eleventy(mdDir, "_site", basicConfig);
+  let results = await elev.toJSON();
   t.is(results.length, 2, "returned documents");
 
   let first = results[0];
@@ -35,7 +35,7 @@ test("Flatten", async (t) => {
       await config.addPlugin(multiDocPlugin, { flatten: true });
     }
   });
-	let results = await elev.toJSON();
+  let results = await elev.toJSON();
   t.is(results.length, 2, "returned documents");
 
   let first = results[0];
@@ -83,7 +83,7 @@ test("Strip NJK comments", async(t) => {
       });
     }
   });
-	let results = await elev.toJSON();
+  let results = await elev.toJSON();
   await basicNJKTests(t, njkDir, results);
 });
 
@@ -96,6 +96,31 @@ test("Strip custom comments", async(t) => {
       });
     }
   });
-	let results = await elev.toJSON();
+  let results = await elev.toJSON();
   await basicNJKTests(t, njkDir, results);
+});
+
+test("Custom separators", async(t) => {
+  let dir = "test/stubs/custom-separator";
+	let elev = new Eleventy(dir, "_site", {
+    config: async function(config) {
+      await config.addPlugin(multiDocPlugin, {
+        separator: /^-{3,}\s*$/m,
+      });
+    }
+  });
+  let results = await elev.toJSON();
+  t.is(results.length, 3, "returned documents");
+
+  let first = results[0];
+  t.is(first.rawInput,    `<!-- Test -->`);
+  t.is(first.content,     `<!-- Test -->`);
+
+  let second = results[1];
+  t.is(second.rawInput,   `# ...`);
+  t.is(second.content,    `<h1>...</h1>\n`);
+
+  let third = results[2];
+  t.is(third.rawInput,    `Howdy`);
+  t.is(third.content,     `<p>Howdy</p>\n`);
 });

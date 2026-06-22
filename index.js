@@ -67,8 +67,9 @@ function splitMultiDoc(rawContent,
   let normalized = preProcess(rawContent.replace(/\r\n/g, "\n"));
 
   // Build pattern from separator
-  let splitPattern = separator instanceof RegExp ? separator
-                      : new RegExp(`^\\s*${escapeRegex(separator)}\\s*$`, "m");
+  let splitPattern = separator instanceof RegExp ? 
+                      separator : 
+                      new RegExp(`^\\s*${escapeRegex(separator)}\\s*$`, "m");
 
   // Split content body
   let chunks = rawContent.split(splitPattern);
@@ -91,7 +92,7 @@ function splitMultiDoc(rawContent,
 /**
  * multiDocPlugin options
  * @typedef {Object} MultiDocOptions
- * @property {string} [pattern="**\/*.multidoc.md"]- Glob pattern for matching files
+ * @property {string|RegExp} [pattern="**\/*.multidoc.md"]- Glob pattern for matching files
  * @property {string} [separator="<!-- --- -->"] - Document separator
  * @property {boolean} [navigation=true] - Should "prev" and "next" links be auto-generated?
  * @property {Function} [filePreProcess] - Function called to pre-process the text of the whole multi-section file

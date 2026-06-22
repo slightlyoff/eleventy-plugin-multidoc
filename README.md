@@ -33,7 +33,7 @@ are split by the string `<!-- --- -->`; e.g. if we had a file located at
  - Each will be output to `<output-dir>/postname/<number>/index.html` 
  - The output directory is configured by 11ty
  - The base directory name is the left-most component of the `*.multidoc.md` file name
- - Each internal direcotry is created in 1-based increments.
+ - Each internal directory is created in 1-based increments.
 
 This chunk will land in: `<output-dir>/postname/1/index.html`
 
@@ -63,6 +63,7 @@ the plugin's configuration option, passed as the second parameter when
 registering:
 
 ```js
+// .eleventy.js
 import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
 // ... 
 export default async function(config) {
@@ -145,10 +146,13 @@ Which will produce the following files:
 
 ## Advanced Configuration
 
+### Stripping Comments
+
 The plugin supports custom file boundary delimiters, as well as pre-processing
-functions to ensure that unwanted content isn't processed across file
-boundaries. A classic example of this are comments that might span multiple
-separated chunks, e.g. if you're using nunjucks inside your markdown templates.
+functions for both the overall source file, as well as individual chunks, to
+ensure that unwanted content isn't processed across file boundaries. A classic
+example of this are comments that might span multiple chunks, e.g. if you're
+using nunjucks in markdown templates.
 
 Here's an example that strips Nunjucks comments before each file is chunked and
 transformed using the provided function for stripping comments:
@@ -179,5 +183,36 @@ export default async function(config) {
       output: "../out"
     }
   }
+}
+```
+
+### Custom file separators
+
+The default separator (`<!-- --- -->`) can be overridden using the `separator` parameter. Here, for example, we set it to `=====`, which must be the entire content of a line:
+
+```js
+// .eleventy.js
+import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
+// ... 
+export default async function(config) {
+  await config.addPlugin(multiDocPlugin, { separator: "=====" });
+  // ...
+}
+```
+
+[Pandoc,](https://pandoc.org/MANUAL.html#structuring-the-slide-show) uses any Markdown horizontal rule as a document delimiter, which can be re-created using a regular expression:
+
+```js
+// .eleventy.js
+import multiDocPlugin from "@slightlyoff/eleventy-plugin-multidoc";
+// ... 
+export default async function(config) {
+  await config.addPlugin(multiDocPlugin, {
+    // Match 3 or more dashes starting a line, followed by 
+    // any number of additional dashes, then any number of 
+    // spaces or tabs to the end of a line:
+    separator: /^-{3,}\s*$/m,
+  });
+  // ...
 }
 ```
