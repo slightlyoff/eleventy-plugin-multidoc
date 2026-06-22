@@ -18,7 +18,7 @@ function identity(i) { return i; }
  * @param {string} [end="#}"] - Comment end, defaults to "#}"
  * @returns {string}
  */
-export function stripComments(str="", start="{#", end="#}") {
+function stripComments(str="", start="{#", end="#}") {
   // Slow, but easier than debugging a regex
   if(
     (str.length < start.length) ||
@@ -105,13 +105,7 @@ function splitMultiDoc(rawContent,
  * @param {Object} eleventyConfig- The Eleventy configuration object
  * @param {MultiDocOptions} [options] - File pattern, frontmatter separator, and link options
  */
-export default function() {
-  return _mdp.call(this, ...arguments);
-}
-
-export let multiDocPlugin = _mdp;
-
-function _mdp(eleventyConfig, options={}) {
+function multiDocPlugin(eleventyConfig, options={}) {
   let {
     pattern = "**/*.multidoc.md",
     separator = "<!-- --- -->",
@@ -147,16 +141,19 @@ function _mdp(eleventyConfig, options={}) {
     let baseStem = filePath.replace(/\.\w+\.md$/, "");
 
     // TODO: allow zero-indexed for nerds?
-    let getPathFor = function(segment, idx=0) {
+    let getBasePathFor = function(segment, idx=0) {
       let path = segment?.data?.permalink || 
                  segment?.data?.filename ||
                 `${baseStem}/${ idx + 1 }${ flatten ? "" : "/index" }`;
+      if(path.endsWith(".html")) { // Strip explicit extension
+        path = path.substring(0, path.length - 5);
+      }
       return path;
     }
 
     // Create a virtual template per segment
     segments.forEach((segment, idx=0) => {
-      let virtualBasePath = getPathFor(segment, idx);
+      let virtualBasePath = getBasePathFor(segment, idx);
       let virtualPath = `${virtualBasePath}.md`; 
 
       segment.data.multiDoc = {
@@ -193,3 +190,6 @@ function _mdp(eleventyConfig, options={}) {
     });
   });
 }
+
+export { stripComments, multiDocPlugin };
+export default multiDocPlugin;

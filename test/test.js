@@ -124,3 +124,22 @@ test("Custom separators", async(t) => {
   t.is(third.rawInput,    `Howdy`);
   t.is(third.content,     `<p>Howdy</p>\n`);
 });
+
+test("Custom file names", async(t) => {
+  let dir = "test/stubs/custom-file-names";
+	let elev = new Eleventy(dir, "_site", basicConfig);
+  let results = await elev.toJSON();
+
+  t.is(results.length, 2, "returned documents");
+
+  let first = results[0];
+  t.is(first.url,         `/foo/bar/baz.html`);
+  t.is(first.inputPath ,  `./${dir}/foo/bar/baz.md`);
+  t.is(first.outputPath,  `./_site/foo/bar/baz.html`);
+
+  let second = results[1];
+  console.dir(second);
+  t.is(second.url,         `/foo_bar.html`);
+  t.is(second.inputPath,   `./${dir}/foo_bar.md`);
+  t.is(second.outputPath,  './_site/foo_bar.html');
+});
