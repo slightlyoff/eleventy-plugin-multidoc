@@ -138,7 +138,6 @@ test("Custom file names", async(t) => {
   t.is(first.outputPath,  `./_site/foo/bar/baz.html`);
 
   let second = results[1];
-  console.dir(second);
   t.is(second.url,         `/foo_bar.html`);
   t.is(second.inputPath,   `./${dir}/foo_bar.md`);
   t.is(second.outputPath,  './_site/foo_bar.html');

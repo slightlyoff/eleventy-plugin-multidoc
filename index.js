@@ -1,7 +1,7 @@
 // eleventy-plugin-multidoc.js
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { default as matter } from "gray-matter";
+import { default as matter } from "@11ty/gray-matter";
 import { globSync } from "tinyglobby";
 
 function escapeRegex(str) {
