@@ -4,7 +4,9 @@
   "description": "An 11ty plugin for generating multiple output files from a single source document.",
   "main": "index.js",
   "module": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "npx ava"
+  },
   "keywords": [
     "eleventy",
     "eleventy-plugin"
