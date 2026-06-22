@@ -32,7 +32,8 @@ are split by the string `<!-- --- -->`; e.g. if we had a file located at
 
  - Each will be output to `<output-dir>/postname/<number>/index.html` 
  - The output directory is configured by 11ty
- - The base directory name is the left-most component of the `*.multidoc.md` file name
+ - The base directory name is the left-most component of the `*.multidoc.md`
+   file name
  - Each internal directory is created in 1-based increments.
 
 This chunk will land in: `<output-dir>/postname/1/index.html`
@@ -99,7 +100,8 @@ to:
 ```
 
 Control of filenames can be configured through frontmatter and combined with
-`flatten: true` using either the usual `permalink` attribute, or a separate `filename` property:
+`flatten: true` using either the usual `permalink` attribute, or a separate
+`filename` property:
 
 ```md
 ---
@@ -109,8 +111,8 @@ filename: "preamble-1"
 # Preamble
 
 > Whereas recognition of the inherent dignity and of the equal and inalienable
-rights of all members of the human family is the foundation of freedom, justice
-and peace in the world,
+> rights of all members of the human family is the foundation of freedom, 
+> justice and peace in the world,
 
 <!-- --- -->
 
@@ -175,20 +177,16 @@ export default async function(config) {
   return {
     markdownTemplateEngine: "njk",
     templateFormats: [ "md", "njk" ],
-    dir: {
-      input: "./yoursite",
-      includes: "../_includes",
-      layouts: "../_layouts",
-      data: "../_data",
-      output: "../out"
-    }
+    // ...
   }
 }
 ```
 
 ### Custom file separators
 
-The default separator (`<!-- --- -->`) can be overridden using the `separator` parameter. Here, for example, we set it to `=====`, which must be the entire content of a line:
+The default separator (`<!-- --- -->`) can be overridden using the `separator`
+parameter. Here, for example, we set it to `=====`, which must be the entire
+content of a line:
 
 ```js
 // .eleventy.js
@@ -200,7 +198,9 @@ export default async function(config) {
 }
 ```
 
-[Pandoc,](https://pandoc.org/MANUAL.html#structuring-the-slide-show) e.g., uses any Markdown horizontal rule as a document delimiter, which can be re-created using a regular expression:
+[Pandoc,](https://pandoc.org/MANUAL.html#structuring-the-slide-show) e.g., uses
+any Markdown horizontal rule as a document delimiter, which can be re-created
+using a regular expression:
 
 ```js
 // .eleventy.js
@@ -217,4 +217,6 @@ export default async function(config) {
 }
 ```
 
-When passing a custom separator regular expression, be sure to set the multiline flag (`/m`) and explicitly match line start and line end to avoid incorrectly matching within content.
+When passing a custom separator regular expression, be sure to set the
+multiline flag (`/m`) and explicitly match line start and line end to avoid
+incorrectly matching within content.
