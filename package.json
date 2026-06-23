@@ -22,7 +22,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eleventy-plugin-multidoc.git"
+    "url": "https://github.com/slightlyoff/eleventy-plugin-multidoc.git"
   },
   "type": "module",
   "dependencies": {
