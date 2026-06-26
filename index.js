@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { default as matter } from "@11ty/gray-matter";
 import { globSync } from "tinyglobby";
+import { TemplatePath } from "@11ty/eleventy-utils"
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -127,8 +128,12 @@ function multiDocPlugin(eleventyConfig, options={}) {
   let files = globSync(pattern, { cwd: inputDir });
 
   files.forEach((filePath) => {
-    let absolutePath = path.join(inputDir, filePath);
-    let rawContent = fs.readFileSync(absolutePath, "utf-8");
+    let inputFilePath = TemplatePath.addLeadingDotSlash(
+      TemplatePath.join(inputDir, filePath)
+    );
+    let urls = [];
+    let paths = [];
+    let rawContent = fs.readFileSync(inputFilePath, "utf-8");
     let processed = filePreProcess(rawContent);
     let segments = splitMultiDoc(processed, separator, chunkPreProcess);
 
@@ -160,26 +165,32 @@ function multiDocPlugin(eleventyConfig, options={}) {
         idx,
         virtualPath,
         total: segments.length,
-        sourceFile: filePath,
+        sourceFile: filePath, // TODO: does not represent URL
+        urls,
+        paths,
+        // inputUrl,
       };
 
       if(!segment.data.permalink) {
         segment.data.permalink = `/${virtualBasePath}.html`;
       }
+      urls.push(segment.data.permalink);
+      paths.push(virtualPath);
     });
 
     // Fixup prev/next links, then add template to build
     segments.forEach((segment, idx) => {
       // Prev
+      let md = segment.data.multiDoc;
       if(navigation) {
         if(idx > 0) { 
           let prev = segments[idx - 1];
-          segment.data.multiDoc.prev = segment.data.prev = prev.data.permalink;
+          md.prev = segment.data.prev = prev.data.permalink;
         }
         // Next
         if(idx < segments.length - 1) {
           let next = segments[idx + 1];
-          segment.data.multiDoc.next = segment.data.next = next.data.permalink;
+          md.next = segment.data.next = next.data.permalink;
         }
       }
 
@@ -189,6 +200,7 @@ function multiDocPlugin(eleventyConfig, options={}) {
                                  segment.data);
     });
   });
+
 }
 
 export { stripComments, multiDocPlugin };

@@ -1,6 +1,6 @@
 {
   "name": "@slightlyoff/eleventy-plugin-multidoc",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "An 11ty plugin for generating multiple output files from a single source document.",
   "main": "index.js",
   "module": "index.js",
@@ -26,6 +26,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@11ty/eleventy-utils": "^2.0.7",
     "@11ty/gray-matter": "^2.1.0",
     "tinyglobby": "^0.2.17"
   },
