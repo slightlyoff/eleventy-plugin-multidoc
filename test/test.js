@@ -28,6 +28,13 @@ test("Basic splitting", async (t) => {
   t.is(second.content,    `<h1>...</h1>\n`);
 });
 
+test("Ignore files", async (t) => {
+  let mdDir = "test/stubs/ignores";
+  let elev = new Eleventy(mdDir, "_site", basicConfig);
+  let results = await elev.toJSON();
+  t.is(results.length, 2, "returned documents");
+});
+
 test("Flatten", async (t) => {
   let mdDir = "test/stubs/markdown";
 	let elev = new Eleventy(mdDir, "_site", {

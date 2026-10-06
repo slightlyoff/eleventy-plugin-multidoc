@@ -120,12 +120,17 @@ function multiDocPlugin(eleventyConfig, options={}) {
   eleventyConfig.addWatchTarget(pattern, { resetConfig: true });
 
   // Opt matching files out of normal template processing
+  let capturedIgnores = new Set(eleventyConfig.ignores);
+  // it's a Set.
   eleventyConfig.ignores.add(pattern);
 
   let inputDir = eleventyConfig.directories?.input || ".";
 
   // Find and process all matching files
-  let files = globSync(pattern, { cwd: inputDir });
+  let files = globSync(pattern, { 
+    cwd: inputDir,
+    ignore: Array.from(capturedIgnores),
+  });
 
   files.forEach((filePath) => {
     let inputFilePath = TemplatePath.addLeadingDotSlash(
